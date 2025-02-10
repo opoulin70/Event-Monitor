@@ -1,0 +1,38 @@
+# Ignore build directories
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+
+# Ignore generated files
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+*.log
+*.d
+*.pdb
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.swp
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore CMake API reply files
+/.cmake/api/v1/reply/
+
+# Ignore other temporary files
+*.tmp
+*.bak
+*.old
+*.orig
+*.rej
