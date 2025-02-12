@@ -10,25 +10,36 @@ extern "C" {
 
 class Device {
 public:
-    explicit Device(const std::string& path);
     ~Device() = default;
     Device(const Device&) = delete;
     Device(Device&&) noexcept = default;
     Device& operator=(const Device&) = delete;
     Device& operator=(Device&&) noexcept = default;
 
-    const std::optional<std::string>& GetName(bool refreshCache = false) const;
-    const std::optional<std::string>& GetPath(bool refreshCache = false) const;
-    const std::optional<std::string>& GetProductID(bool refreshCache = false) const;
-    const std::optional<std::string>& GetSerial(bool refreshCache = false) const;
-    const std::optional<std::string>& GetSubsystem(bool refreshCache = false) const;
-    const std::optional<std::string>& GetType(bool refreshCache = false) const;
-    const std::optional<std::string>& GetVendorID(bool refreshCache = false) const;
+    static Device CreateFromSyspath(const std::string& syspath);
+    static Device CreateFromDevnum(char type, dev_t devnum);
+    static Device CreateFromSubsystemSysname(const std::string& subsystem, const std::string& sysname);
+    static Device CreateFromDeviceId(const std::string& id);
+    static Device CreateFromStatRdev(const struct stat& st);
+    static Device CreateFromDevname(const std::string& devname);
+    static Device CreateFromPath(const std::string& path);
+    static Device CreateFromIfname(const std::string& ifname);
+    static Device CreateFromIfindex(int ifindex);
+    
+    const std::optional<std::string>& GetName(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetPath(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetProductID(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetSerial(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetSubsystem(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetType(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetVendorID(const bool refreshCache = false) const;
 
     // TODO: Use boolean to indicate if cache is stale ?
     void InvalidateCache();
 
 private:
+    explicit Device(sd_device* dev);
+
     // Generic caching helper function.
     //
     // Returns cached value if present, otherwise invoke the provided getter function to fetch and cache the value.

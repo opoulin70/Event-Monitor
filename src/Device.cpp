@@ -5,19 +5,79 @@
 
 // *** Public ***
 
-// Constructor: Initializes the device object
-Device::Device(const std::string& path) 
-    : device(nullptr, &sd_device_unref) 
-{
+Device Device::CreateFromSyspath(const std::string& syspath) {
     sd_device* dev = nullptr;
-    if (sd_device_new_from_syspath(&dev, path.c_str()) < 0) {
-        throw std::runtime_error("Failed to get device from sd-device");
+    if (sd_device_new_from_syspath(&dev, syspath.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from syspath!");
     }
-    // device = std::make_unique<sd_device*>(dev);
-    device.reset(dev);
+    return Device(dev);
 }
 
-const std::optional<std::string>& Device::GetName(bool refreshCache) const {
+Device Device::CreateFromDevnum(char type, dev_t devnum) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_devnum(&dev, type, devnum) < 0) {
+        throw std::runtime_error("Failed to create device from devnum!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromSubsystemSysname(const std::string& subsystem, const std::string& sysname) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_subsystem_sysname(&dev, subsystem.c_str(), sysname.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from subsystem and sysname!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromDeviceId(const std::string& id) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_device_id(&dev, id.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from device ID!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromStatRdev(const struct stat& st) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_stat_rdev(&dev, &st) < 0) {
+        throw std::runtime_error("Failed to create device from stat rdev!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromDevname(const std::string& devname) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_devname(&dev, devname.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from devname!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromPath(const std::string& path) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_path(&dev, path.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from path!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromIfname(const std::string& ifname) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_ifname(&dev, ifname.c_str()) < 0) {
+        throw std::runtime_error("Failed to create device from ifname!");
+    }
+    return Device(dev);
+}
+
+Device Device::CreateFromIfindex(int ifindex) {
+    sd_device* dev = nullptr;
+    if (sd_device_new_from_ifindex(&dev, ifindex) < 0) {
+        throw std::runtime_error("Failed to create device from ifindex!");
+    }
+    return Device(dev);
+}
+
+const std::optional<std::string>& Device::GetName(const bool refreshCache) const {
     return GetCachedValueOrFetch(name, 
     [this]() { 
         const char* val = nullptr;
@@ -26,7 +86,7 @@ const std::optional<std::string>& Device::GetName(bool refreshCache) const {
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetPath(bool refreshCache) const {
+const std::optional<std::string>& Device::GetPath(const bool refreshCache) const {
     return GetCachedValueOrFetch(path, 
     [this]() { 
         const char* val = nullptr;
@@ -35,7 +95,7 @@ const std::optional<std::string>& Device::GetPath(bool refreshCache) const {
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetProductID(bool refreshCache) const {
+const std::optional<std::string>& Device::GetProductID(const bool refreshCache) const {
     return GetCachedValueOrFetch(productID, 
     [this]() { 
         const char* val = nullptr;
@@ -44,7 +104,7 @@ const std::optional<std::string>& Device::GetProductID(bool refreshCache) const 
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetSerial(bool refreshCache) const {
+const std::optional<std::string>& Device::GetSerial(const bool refreshCache) const {
     return GetCachedValueOrFetch(serial, 
     [this]() { 
         const char* val = nullptr;
@@ -53,7 +113,7 @@ const std::optional<std::string>& Device::GetSerial(bool refreshCache) const {
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetSubsystem(bool refreshCache) const {
+const std::optional<std::string>& Device::GetSubsystem(const bool refreshCache) const {
     return GetCachedValueOrFetch(subsystem, 
     [this]() { 
         const char* val = nullptr;
@@ -62,7 +122,7 @@ const std::optional<std::string>& Device::GetSubsystem(bool refreshCache) const 
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetType(bool refreshCache) const {
+const std::optional<std::string>& Device::GetType(const bool refreshCache) const {
     return GetCachedValueOrFetch(type, 
     [this]() { 
         const char* val = nullptr;
@@ -71,7 +131,7 @@ const std::optional<std::string>& Device::GetType(bool refreshCache) const {
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetVendorID(bool refreshCache) const {
+const std::optional<std::string>& Device::GetVendorID(const bool refreshCache) const {
     return GetCachedValueOrFetch(
     vendorID, 
     [this]() { 
@@ -92,6 +152,13 @@ void Device::InvalidateCache() {
 }
 
 // *** Private ***
+
+Device::Device(sd_device* dev)
+    : device(dev, &sd_device_unref) {
+    if (!dev) {
+        throw std::runtime_error("Invalid Device!");
+    }
+}
 
 template <typename T, typename GetterFunc>
 auto Device::GetCachedValueOrFetch(std::optional<T>& cache, GetterFunc&& getter, bool refreshCache) const

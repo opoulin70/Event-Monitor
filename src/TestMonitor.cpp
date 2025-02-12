@@ -6,7 +6,6 @@
 #include <cstring>
 
 // Helper function: Enumerate device syspaths (optionally filtered by subsystem)
-// Note: On your system, sd_device_enumerator_get_device_next() takes one argument.
 std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = nullptr) {
     std::vector<std::string> paths;
     sd_device_enumerator* enumerator = nullptr;
@@ -27,11 +26,8 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
         }
     }
     
-    // Iterate over devices using the new API:
-    sd_device* dev = nullptr;
-    dev = sd_device_enumerator_get_device_first(enumerator);
-
-    while ((dev = sd_device_enumerator_get_device_next(enumerator)) != nullptr) {
+    for (sd_device* dev = sd_device_enumerator_get_device_first(enumerator); dev != nullptr;
+    dev = sd_device_enumerator_get_device_next(enumerator)) {
         const char* syspath = nullptr;
         r = sd_device_get_syspath(dev, &syspath);
 
@@ -41,6 +37,8 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
         else {
             std::cerr << "Failed to get syspath: " << strerror(-r) << std::endl;
         }
+        
+        //sd_device_unref(dev);
     }
     
     sd_device_enumerator_unref(enumerator);
@@ -59,7 +57,7 @@ void MonitorDevices() {
         std::cout << "------------------------------\n";
         std::cout << "Device syspath: " << path << "\n";
         try {
-            Device d(path.c_str());
+            Device d = Device::CreateFromSyspath(path);
 
             const auto& typeOpt = d.GetType();
             if (typeOpt.has_value()) {
@@ -91,7 +89,7 @@ void MonitorDevices() {
         std::cout << "------------------------------\n";
     }
 
-    Device dev = Device("/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1");
+    Device dev = Device::CreateFromSyspath("/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1");
     auto type = dev.GetType();
     auto name = dev.GetName();
     auto path = dev.GetPath();
