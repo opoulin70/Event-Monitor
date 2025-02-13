@@ -1,3 +1,5 @@
 #pragma once
 
-void MonitorDevices();
+void TestCreateDeviceFromStaticSyspath();
+void TestCreateDevicesFromSyspaths();
+void TestEnumeratorAndDeviceRef();

@@ -154,10 +154,14 @@ void Device::InvalidateCache() {
 // *** Private ***
 
 Device::Device(sd_device* dev)
-    : device(dev, &sd_device_unref) {
+    : device(dev, &Device::DeviceUnref) {
     if (!dev) {
         throw std::runtime_error("Invalid Device!");
     }
+}
+
+void Device::DeviceUnref(sd_device* dev) {
+    dev ? sd_device_unref(dev) : throw std::runtime_error("Tried to unreference a Device already unreferenced!");
 }
 
 template <typename T, typename GetterFunc>

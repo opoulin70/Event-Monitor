@@ -40,6 +40,8 @@ public:
 private:
     explicit Device(sd_device* dev);
 
+    static void DeviceUnref(sd_device* dev);
+
     // Generic caching helper function.
     //
     // Returns cached value if present, otherwise invoke the provided getter function to fetch and cache the value.
@@ -62,7 +64,7 @@ private:
     -> std::conditional_t<(sizeof(T) > sizeof(void*)), const std::optional<T>&, std::optional<T>>;
 
 
-    std::unique_ptr<sd_device, decltype(&sd_device_unref)> device;
+    std::unique_ptr<sd_device, decltype(&Device::DeviceUnref)> device;
 
     mutable std::optional<std::string> name;
     mutable std::optional<std::string> path;
@@ -71,4 +73,6 @@ private:
     mutable std::optional<std::string> subsystem;
     mutable std::optional<std::string> type;
     mutable std::optional<std::string> vendorID;
+
+    friend class DeviceEnumerator;
 };

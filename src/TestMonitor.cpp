@@ -4,6 +4,7 @@
 #include "Device.h"  // Your Device class header
 #include <systemd/sd-device.h>
 #include <cstring>
+#include "DeviceEnumerator.h"
 
 // Helper function: Enumerate device syspaths (optionally filtered by subsystem)
 std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = nullptr) {
@@ -12,7 +13,7 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
     int r = sd_device_enumerator_new(&enumerator);
 
     if (r < 0) {
-        std::cerr << "Failed to create enumerator: " << strerror(-r) << std::endl;
+        std::cerr << "Failed to create sd_device_enumerator: " << strerror(-r) << std::endl;
         return paths;
     }
     
@@ -20,7 +21,7 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
     if (subsystemFilter) {
         r = sd_device_enumerator_add_match_subsystem(enumerator, subsystemFilter, 1);
         if (r < 0) {
-            std::cerr << "Failed to add subsystem filter: " << strerror(-r) << std::endl;
+            std::cerr << "Failed to add subsystem filter to sd_device_enumerator: " << strerror(-r) << std::endl;
             sd_device_enumerator_unref(enumerator);
             return paths;
         }
@@ -46,11 +47,30 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
     return paths;
 }
 
-void MonitorDevices() {
+void TestCreateDeviceFromStaticSyspath() {
+    Device dev = Device::CreateFromSyspath("/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1");
+    auto type = dev.GetType();
+    auto name = dev.GetName();
+    auto path = dev.GetPath();
+    auto productID = dev.GetProductID();
+    auto serial = dev.GetSerial();
+    auto subsystem = dev.GetSubsystem();
+    auto vendorID = dev.GetVendorID();
+
+    std::cout << "Device Type: " << (type ? *type : "N/A") << "\n";
+    std::cout << "Device Name: " << (name ? *name : "N/A") << "\n";
+    std::cout << "Device Path: " << (path ? *path : "N/A") << "\n";
+    std::cout << "Product ID: " << (productID ? *productID : "N/A") << "\n";
+    std::cout << "Serial: " << (serial ? *serial : "N/A") << "\n";
+    std::cout << "Subsystem: " << (subsystem ? *subsystem : "N/A") << "\n";
+    std::cout << "Vendor ID: " << (vendorID ? *vendorID : "N/A") << "\n";
+}
+
+void TestCreateDevicesFromSyspaths() {
     // Optionally filter for a particular subsystem (e.g., "usb") or pass nullptr for all devices.
     auto syspaths = EnumerateDeviceSyspaths("usb");
     
-    syspaths.empty() ? std::cerr << "No devices found in enumerator.\n" : std::cout << "Found " << syspaths.size() << " devices:\n";
+    syspaths.empty() ? std::cerr << "No devices found in sd_device_enumerator.\n" : std::cout << "Found " << syspaths.size() << " devices:\n";
     
     // For each device, create a Device instance and test its getters.
     for (const auto& path : syspaths) {
@@ -86,30 +106,30 @@ void MonitorDevices() {
         catch (const std::exception& ex) {
             std::cerr << "Error initializing Device for " << path << ": " << ex.what() << "\n";
         }
-        std::cout << "------------------------------\n";
     }
-
-    Device dev = Device::CreateFromSyspath("/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1");
-    auto type = dev.GetType();
-    auto name = dev.GetName();
-    auto path = dev.GetPath();
-    auto productID = dev.GetProductID();
-    auto serial = dev.GetSerial();
-    auto subsystem = dev.GetSubsystem();
-    auto vendorID = dev.GetVendorID();
-
-    std::cout << "Device Type: " << (type ? *type : "N/A") << "\n";
-    std::cout << "Device Name: " << (name ? *name : "N/A") << "\n";
-    std::cout << "Device Path: " << (path ? *path : "N/A") << "\n";
-    std::cout << "Product ID: " << (productID ? *productID : "N/A") << "\n";
-    std::cout << "Serial: " << (serial ? *serial : "N/A") << "\n";
-    std::cout << "Subsystem: " << (subsystem ? *subsystem : "N/A") << "\n";
-    std::cout << "Vendor ID: " << (vendorID ? *vendorID : "N/A") << "\n";
-    
-    return;
 }
 
-// void MonitorDevices() {
+void TestEnumeratorAndDeviceRef() {
+    std::vector<Device> devices;
+
+    {
+        DeviceEnumerator enumerator = DeviceEnumerator();
+        enumerator.AddMatchSubsystem("usb", true);
+        devices = enumerator.GetAllDevices();   
+    }
+
+    for (const auto& device : devices) {
+        std::cout << "Device Name: " << device.GetName().value_or("N/A") << "\n";
+        std::cout << "Device Path: " << device.GetPath().value_or("N/A") << "\n";
+        std::cout << "Product ID: " << device.GetProductID().value_or("N/A") << "\n";
+        std::cout << "Serial: " << device.GetSerial().value_or("N/A") << "\n";
+        std::cout << "Subsystem: " << device.GetSubsystem().value_or("N/A") << "\n";
+        std::cout << "Type: " << device.GetType().value_or("N/A") << "\n";
+        std::cout << "Vendor ID: " << device.GetVendorID().value_or("N/A") << "\n";
+    }
+}
+
+// void TestCreateDevicesFromSyspaths() {
 //     Device dev;  // Assume this initializes your `sd_device`
 
 //     std::cout << "Testing Device Getters...\n";

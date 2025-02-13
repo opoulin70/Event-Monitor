@@ -12,7 +12,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 
 # Add source files
-add_executable(DeviceMonitor src/main.cpp src/Device.cpp src/TestMonitor.cpp)
+add_executable(DeviceMonitor src/main.cpp src/TestMonitor.cpp src/Device.cpp src/DeviceEnumerator.cpp)
 
 # Include systemd headers
 target_include_directories(DeviceMonitor PRIVATE ${SYSTEMD_INCLUDE_DIRS})
