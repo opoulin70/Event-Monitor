@@ -77,6 +77,42 @@ Device Device::CreateFromIfindex(int ifindex) {
     return Device(dev);
 }
 
+const std::optional<std::string>& Device::GetDevname(const bool refreshCache) const {
+    return GetCachedValueOrFetch(devname, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_devname(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
+const std::optional<std::string>& Device::GetDevpath(const bool refreshCache) const {
+    return GetCachedValueOrFetch(devpath, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_devpath(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
+const std::optional<std::string>& Device::GetDevtype(const bool refreshCache) const {
+    return GetCachedValueOrFetch(devtype, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_devtype(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
+const std::optional<std::string>& Device::GetDriver(const bool refreshCache) const {
+    return GetCachedValueOrFetch(driver, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_driver(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
 const std::optional<std::string>& Device::GetName(const bool refreshCache) const {
     return GetCachedValueOrFetch(name, 
     [this]() { 
@@ -122,6 +158,33 @@ const std::optional<std::string>& Device::GetSubsystem(const bool refreshCache) 
     refreshCache);
 }
 
+const std::optional<std::string>& Device::GetSysname(const bool refreshCache) const {
+    return GetCachedValueOrFetch(sysname, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_sysname(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
+const std::optional<std::string>& Device::GetSysnum(const bool refreshCache) const {
+    return GetCachedValueOrFetch(sysnum, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_sysnum(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
+const std::optional<std::string>& Device::GetSyspath(const bool refreshCache) const {
+    return GetCachedValueOrFetch(syspath, 
+    [this]() { 
+        const char* val = nullptr;
+        return (sd_device_get_syspath(device.get(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+    },
+    refreshCache);
+}
+
 const std::optional<std::string>& Device::GetType(const bool refreshCache) const {
     return GetCachedValueOrFetch(type, 
     [this]() { 
@@ -141,12 +204,24 @@ const std::optional<std::string>& Device::GetVendorID(const bool refreshCache) c
     refreshCache);
 }
 
+const std::optional<std::string>& Device::GetPropertyFromKey(std::string key) const {
+    const char* val = nullptr;
+    return (sd_device_get_property_value(device.get(), key.c_str(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
+}
+
 void Device::InvalidateCache() {
+    devname.reset();
+    devpath.reset();
+    devtype.reset();
+    driver.reset();
     name.reset();
     path.reset();
     productID.reset();
     serial.reset();
     subsystem.reset();
+    sysname.reset();
+    sysnum.reset();
+    syspath.reset();
     type.reset();
     vendorID.reset();
 }

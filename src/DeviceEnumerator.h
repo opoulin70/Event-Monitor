@@ -19,11 +19,12 @@ public:
     DeviceEnumerator& operator=(const DeviceEnumerator&) = delete;
     DeviceEnumerator& operator=(DeviceEnumerator&&) noexcept = default;
 
-    Device GetDeviceFirst();
-    Device GetDeviceNext();
-    Device GetSubsystemFirst();
-    Device GetSubsystemNext();
+    std::optional<Device> GetDeviceFirst();
+    std::optional<Device> GetDeviceNext();
     std::vector<Device> GetAllDevices();
+    std::optional<Device> GetSubsystemFirst(); // TODO : Implement
+    std::optional<Device> GetSubsystemNext(); // TODO : Implement
+    std::vector<Device> GetAllSubsystems(); // TODO : Implement
 
     // TODO : Should probably remove assert and replace by log error.
     void AddMatchSubsystem(const std::string& subsystem, bool matchSubsystem);

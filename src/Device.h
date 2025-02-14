@@ -26,13 +26,28 @@ public:
     static Device CreateFromIfname(const std::string& ifname);
     static Device CreateFromIfindex(int ifindex);
     
+    // TODO : GetAction()
+    const std::optional<std::string>& GetDevname(const bool refreshCache = false) const;
+    // TODO : GetDevnum()
+    const std::optional<std::string>& GetDevpath(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetDevtype(const bool refreshCache = false) const;
+    // TODO : GetDiskseq()
+    const std::optional<std::string>& GetDriver(const bool refreshCache = false) const;
+    // TODO : Getifindex()
     const std::optional<std::string>& GetName(const bool refreshCache = false) const;
     const std::optional<std::string>& GetPath(const bool refreshCache = false) const;
     const std::optional<std::string>& GetProductID(const bool refreshCache = false) const;
+    // TODO : GetSeqnum()
     const std::optional<std::string>& GetSerial(const bool refreshCache = false) const;
     const std::optional<std::string>& GetSubsystem(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetSysname(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetSysnum(const bool refreshCache = false) const;
+    const std::optional<std::string>& GetSyspath(const bool refreshCache = false) const;
     const std::optional<std::string>& GetType(const bool refreshCache = false) const;
     const std::optional<std::string>& GetVendorID(const bool refreshCache = false) const;
+
+    // TODO : Document this is not in cache
+    const std::optional<std::string>& GetPropertyFromKey(std::string key) const;
 
     // TODO: Use boolean to indicate if cache is stale ?
     void InvalidateCache();
@@ -66,11 +81,18 @@ private:
 
     std::unique_ptr<sd_device, decltype(&Device::DeviceUnref)> device;
 
+    mutable std::optional<std::string> devname;
+    mutable std::optional<std::string> devpath;
+    mutable std::optional<std::string> devtype;
+    mutable std::optional<std::string> driver;
     mutable std::optional<std::string> name;
     mutable std::optional<std::string> path;
     mutable std::optional<std::string> productID;
     mutable std::optional<std::string> serial;
     mutable std::optional<std::string> subsystem;
+    mutable std::optional<std::string> syspath;
+    mutable std::optional<std::string> sysname;
+    mutable std::optional<std::string> sysnum;
     mutable std::optional<std::string> type;
     mutable std::optional<std::string> vendorID;
 

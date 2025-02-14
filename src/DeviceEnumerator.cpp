@@ -10,6 +10,36 @@ DeviceEnumerator::DeviceEnumerator()
     enumerator.reset(enumeratorTemp);
 }
 
+std::optional<Device> DeviceEnumerator::GetDeviceFirst() {
+    sd_device* dev = sd_device_enumerator_get_device_first(enumerator.get());
+    if (!dev) {
+        return std::nullopt;
+    }
+    sd_device_ref(dev); // Increment reference count to prevent deallocation when enumerator is destroyed.
+    return Device(dev);
+}
+
+// TODO : Should return nullptr or something of the sort
+std::optional<Device> DeviceEnumerator::GetDeviceNext() {
+    sd_device* dev = sd_device_enumerator_get_device_next(enumerator.get());
+    if (!dev) {
+        return std::nullopt;
+    }
+    sd_device_ref(dev); // Increment reference count to prevent deallocation when enumerator is destroyed.
+    return Device(dev);
+}
+
+std::vector<Device> DeviceEnumerator::GetAllDevices() {
+    std::vector<Device> devices;
+    for (sd_device* dev = sd_device_enumerator_get_device_first(enumerator.get()); 
+    dev != nullptr;
+    dev = sd_device_enumerator_get_device_next(enumerator.get())) {
+        sd_device_ref(dev); // Increment reference count to prevent deallocation when enumerator is destroyed.
+        devices.push_back(Device(dev));
+    }
+    return devices;
+}
+
 void DeviceEnumerator::AddMatchSubsystem(const std::string& subsystem, bool matchSubsystem) {
     if (sd_device_enumerator_add_match_subsystem(enumerator.get(), subsystem.c_str(), matchSubsystem) < 0) {
         throw std::runtime_error("Failed to add subsystem match!");
@@ -50,14 +80,4 @@ void DeviceEnumerator::AddMatchTag(const std::string& tag) {
     if (sd_device_enumerator_add_match_tag(enumerator.get(), tag.c_str()) < 0) {
         throw std::runtime_error("Failed to add tag match!");
     }
-}
-
-std::vector<Device> DeviceEnumerator::GetAllDevices() {
-    std::vector<Device> devices;
-    for (sd_device* dev = sd_device_enumerator_get_device_first(enumerator.get()); dev != nullptr;
-    dev = sd_device_enumerator_get_device_next(enumerator.get())) {
-        sd_device_ref(dev); // Increment reference count to prevent deallocation when enumerator is destroyed.
-        devices.push_back(Device(dev));
-    }
-    return devices;
 }
