@@ -1,4 +1,4 @@
-#include "TestMonitor.h"
+#include <EventMonitor/TestMonitor.h>
 #include <iostream>
 
 void DisplayTestName (const std::string& testName) {

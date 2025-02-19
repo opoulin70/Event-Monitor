@@ -6,13 +6,14 @@ pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 add_library(LibEventMonitor 
 Device.cpp 
 DeviceEnumerator.cpp
-TestMonitor.cpp)
+TestMonitor.cpp
+)
 
 target_compile_options(LibEventMonitor PRIVATE -Wall -Wextra -Wpedantic)
 target_compile_features(LibEventMonitor PUBLIC cxx_std_17)
 
 # Set include directories (PUBLIC so it's available to dependents)
-target_include_directories(LibEventMonitor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(LibEventMonitor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # Include systemd headers
 target_include_directories(LibEventMonitor PRIVATE ${SYSTEMD_INCLUDE_DIRS})
@@ -26,7 +27,8 @@ target_link_libraries(LibEventMonitor PRIVATE ${SYSTEMD_LDFLAGS})
 # Add source files for main application
 if (BUILD_MAIN_EXECUTABLE)
     add_executable(EventMonitor 
-    main.cpp)
+    main.cpp
+    )
 
     target_link_libraries(EventMonitor LibEventMonitor)
 

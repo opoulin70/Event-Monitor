@@ -1,10 +1,10 @@
+#include <EventMonitor/DeviceEnumerator.h>
+#include <EventMonitor/Device.h>
 #include <iostream>
 #include <vector>
 #include <string>
-#include "Device.h"  // Your Device class header
 #include <systemd/sd-device.h>
 #include <cstring>
-#include "DeviceEnumerator.h"
 
 // Helper function: Enumerate device syspaths (optionally filtered by subsystem)
 std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = nullptr) {
