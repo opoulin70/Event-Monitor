@@ -47,7 +47,7 @@ public:
     const std::optional<std::string>& GetVendorID(const bool refreshCache = false) const;
 
     // TODO : Document this is not in cache
-    const std::optional<std::string>& GetPropertyFromKey(std::string key) const;
+    const std::optional<std::string> GetPropertyFromKey(std::string key) const;
 
     // TODO: Use boolean to indicate if cache is stale ?
     void InvalidateCache();

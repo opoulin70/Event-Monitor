@@ -204,7 +204,7 @@ const std::optional<std::string>& Device::GetVendorID(const bool refreshCache) c
     refreshCache);
 }
 
-const std::optional<std::string>& Device::GetPropertyFromKey(std::string key) const {
+const std::optional<std::string> Device::GetPropertyFromKey(std::string key) const {
     const char* val = nullptr;
     return (sd_device_get_property_value(device.get(), key.c_str(), &val) >= 0) ? std::make_optional(val) : std::nullopt;
 }
