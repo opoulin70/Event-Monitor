@@ -1,9 +1,8 @@
 #include <EventMonitor/DeviceEnumerator.h>
 #include <EventMonitor/Device.h>
+#include <systemd/sd-device.h>
 #include <iostream>
 #include <vector>
-#include <string>
-#include <systemd/sd-device.h>
 #include <cstring>
 
 // Helper function: Enumerate device syspaths (optionally filtered by subsystem)

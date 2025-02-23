@@ -10,8 +10,10 @@ if (ENABLE_TESTS)
 
     # Add test executable
     add_executable(TestDeviceMonitor
-        Device.test.cpp
         main.test.cpp
+        Utilities.cpp
+        Device.test.cpp
+        DeviceEnumerator.test.cpp
     )
 
     # Compiler options
@@ -28,7 +30,6 @@ if (ENABLE_TESTS)
         pthread  # Required on Linux for gtest
         LibEventMonitor
     )
-
 
     # Register tests with CTest
     include(GoogleTest)

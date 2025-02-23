@@ -4,8 +4,8 @@
 DeviceEnumerator::DeviceEnumerator() 
     : enumerator(nullptr, &sd_device_enumerator_unref) {
     sd_device_enumerator* enumeratorTemp = nullptr;
-    if (sd_device_enumerator_new(&enumeratorTemp) < 0) {
-        throw std::runtime_error("Invalid DeviceEnumerator!");
+    if (sd_device_enumerator_new(&enumeratorTemp) < 0 || !enumeratorTemp) {
+        throw std::runtime_error("Failed to create a DeviceEnumerator!");
     }
     enumerator.reset(enumeratorTemp);
 }
