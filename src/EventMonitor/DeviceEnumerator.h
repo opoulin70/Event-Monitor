@@ -36,6 +36,9 @@ public:
     void AddMatchTag(const std::string& tag);
     void AddMatchParent(sd_device_enumerator *enumerator, sd_device *parent); // TODO : Implement
 
+    // Remove all filters from the enumerator.
+    void Reset();
+
 private:
     std::unique_ptr<sd_device_enumerator, decltype(&sd_device_enumerator_unref)> enumerator;
 };

@@ -81,3 +81,11 @@ void DeviceEnumerator::AddMatchTag(const std::string& tag) {
         throw std::runtime_error("Failed to add tag match!");
     }
 }
+
+void DeviceEnumerator::Reset() {
+    sd_device_enumerator* enumeratorTemp = nullptr;
+    if (sd_device_enumerator_new(&enumeratorTemp) < 0 || !enumeratorTemp) {
+        throw std::runtime_error("Failed to reset DeviceEnumerator!");
+    }
+    enumerator.reset(enumeratorTemp);
+}

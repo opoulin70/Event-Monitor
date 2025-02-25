@@ -203,3 +203,21 @@ TEST_F(DeviceEnumeratorTests, GetAllDevices_WithSubsystemFilter) {
     
     EXPECT_EQ(devices.size(), sdDevices.size()) << "Mismatch between DeviceEnumerator and systemd API device counts.";
 }
+
+TEST_F(DeviceEnumeratorTests, AddSubsystemFilterAndRemove) {
+    DeviceEnumerator enumerator = DeviceEnumerator();
+
+    // Add usb filter and get count.
+    enumerator.AddMatchSysname("usb");
+    const auto usbDevicesCount = enumerator.GetAllDevices().size();
+
+    // Remove the filter and compare.
+    enumerator.Reset();
+    const auto allDevicesCount = enumerator.GetAllDevices().size();
+    EXPECT_NE(usbDevicesCount, allDevicesCount) << "Wrong DeviceEnumerator device count after removing the filter.";
+
+    // Add usb filter again and compare.
+    enumerator.AddMatchSysname("usb");
+    const auto usbDevicesCount2 = enumerator.GetAllDevices().size();
+    EXPECT_EQ(usbDevicesCount, usbDevicesCount2) << "Wrong DeviceEnumerator device count after removing and re-adding the filter.";
+}
