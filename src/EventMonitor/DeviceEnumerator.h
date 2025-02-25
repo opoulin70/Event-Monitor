@@ -19,9 +19,9 @@ public:
     DeviceEnumerator& operator=(const DeviceEnumerator&) = delete;
     DeviceEnumerator& operator=(DeviceEnumerator&&) noexcept = default;
 
-    std::optional<Device> GetDeviceFirst();
-    std::optional<Device> GetDeviceNext();
-    std::vector<Device> GetAllDevices();
+    std::optional<Device> GetDeviceFirst() const;
+    std::optional<Device> GetDeviceNext()const;
+    std::vector<Device> GetAllDevices() const;
     std::optional<Device> GetSubsystemFirst(); // TODO : Implement
     std::optional<Device> GetSubsystemNext(); // TODO : Implement
     std::vector<Device> GetAllSubsystems(); // TODO : Implement

@@ -10,7 +10,7 @@ DeviceEnumerator::DeviceEnumerator()
     enumerator.reset(enumeratorTemp);
 }
 
-std::optional<Device> DeviceEnumerator::GetDeviceFirst() {
+std::optional<Device> DeviceEnumerator::GetDeviceFirst() const {
     sd_device* dev = sd_device_enumerator_get_device_first(enumerator.get());
     if (!dev) {
         return std::nullopt;
@@ -20,7 +20,7 @@ std::optional<Device> DeviceEnumerator::GetDeviceFirst() {
 }
 
 // TODO : Should return nullptr or something of the sort
-std::optional<Device> DeviceEnumerator::GetDeviceNext() {
+std::optional<Device> DeviceEnumerator::GetDeviceNext() const {
     sd_device* dev = sd_device_enumerator_get_device_next(enumerator.get());
     if (!dev) {
         return std::nullopt;
@@ -29,7 +29,7 @@ std::optional<Device> DeviceEnumerator::GetDeviceNext() {
     return Device(dev);
 }
 
-std::vector<Device> DeviceEnumerator::GetAllDevices() {
+std::vector<Device> DeviceEnumerator::GetAllDevices() const {
     std::vector<Device> devices;
     for (sd_device* dev = sd_device_enumerator_get_device_first(enumerator.get()); 
     dev != nullptr;

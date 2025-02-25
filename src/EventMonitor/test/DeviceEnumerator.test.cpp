@@ -3,18 +3,14 @@
 
 class DeviceEnumeratorTests : public ::testing::Test {
 protected:
-    // TODO : Maybe this should be handled better.
-    DeviceEnumeratorTests() : sdEnumerator(nullptr, &sd_device_enumerator_unref) {
-        sd_device_enumerator* enumeratorTemp = nullptr;
-        if (sd_device_enumerator_new(&enumeratorTemp) < 0 || !enumeratorTemp) {
-            throw std::runtime_error("Invalid sd_device_enumerator* in DeviceEnumeratorTests constructor!");
-        }
-        sdEnumerator.reset(enumeratorTemp);
-    }
+    DeviceEnumeratorTests() : sdEnumerator(nullptr, &sd_device_enumerator_unref) {}
 
     void SetUp() override {
-        // TODO : Unnecessary ?
-        ASSERT_TRUE(sdEnumerator) << "sd_device_enumerator* got unreferenced somehow!";
+        // Create a clean sd_device_enumerator between each tests.
+        sd_device_enumerator* enumeratorTemp = nullptr;
+        ASSERT_TRUE(sd_device_enumerator_new(&enumeratorTemp) >= 0 && enumeratorTemp) 
+        << "Failed to create a sd_device_enumerator in DeviceEnumeratorTests SetUp!";
+        sdEnumerator.reset(enumeratorTemp);
     }
 
     void TearDown() override {
@@ -24,9 +20,10 @@ protected:
     std::unique_ptr<sd_device_enumerator, decltype(&sd_device_enumerator_unref)> sdEnumerator;
 };
 
+// TODO : Make generalist test function for getters.
 TEST_F(DeviceEnumeratorTests, GetFirstDeviceAndTestAllGetters) {
     // Create our DeviceEnumerator
-    DeviceEnumerator enumerator = DeviceEnumerator();
+    const DeviceEnumerator enumerator = DeviceEnumerator();
 
     // Try to get the first device, otherwise nothing to test.
     sd_device* sdDev = sd_device_enumerator_get_device_first(sdEnumerator.get());  
@@ -170,8 +167,39 @@ TEST_F(DeviceEnumeratorTests, GetFirstDeviceAndTestAllGetters) {
 }
 
 TEST_F(DeviceEnumeratorTests, GetAllDevices) {
-        DeviceEnumerator enumerator = DeviceEnumerator();
+        const DeviceEnumerator enumerator = DeviceEnumerator();
 
-        // Get all devices
-        auto devies = enumerator.GetAllDevices();
+        // Get all devices from our own API.
+        const auto devices = enumerator.GetAllDevices();
+
+        // Get all devices from systemd API,
+        std::vector<const sd_device*> sdDevices;
+        for (const sd_device* dev = sd_device_enumerator_get_device_first(sdEnumerator.get()); 
+        dev != nullptr;
+        dev = sd_device_enumerator_get_device_next(sdEnumerator.get())) {
+            sdDevices.push_back(dev);
+        }
+        
+        EXPECT_EQ(devices.size(), sdDevices.size()) << "Mismatch between DeviceEnumerator and systemd API device counts.";
+}
+
+TEST_F(DeviceEnumeratorTests, GetAllDevices_WithSubsystemFilter) {
+    DeviceEnumerator enumerator = DeviceEnumerator();
+
+    // Add subsystem filter to our enumerator and get all devices.
+    enumerator.AddMatchSubsystem("usb", true);
+    const auto devices = enumerator.GetAllDevices();
+
+    // Add a subsystem filter to the sd enumerator and get all devices.
+    ASSERT_TRUE(sd_device_enumerator_add_match_subsystem(sdEnumerator.get(), "usb", 1) >= 0) 
+    << "Failed to add a match subsystem filter for usb to systemd API enumerator.";
+
+    std::vector<const sd_device*> sdDevices;
+    for (const sd_device* dev = sd_device_enumerator_get_device_first(sdEnumerator.get()); 
+    dev != nullptr;
+    dev = sd_device_enumerator_get_device_next(sdEnumerator.get())) {
+        sdDevices.push_back(dev);
+    }
+    
+    EXPECT_EQ(devices.size(), sdDevices.size()) << "Mismatch between DeviceEnumerator and systemd API device counts.";
 }
