@@ -1,4 +1,4 @@
+#include <gtest/gtest.h>
 #include <EventMonitor/Device.h>
-#include "gtest/gtest.h"
 
 // (...)

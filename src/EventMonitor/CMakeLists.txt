@@ -6,6 +6,8 @@ pkg_check_modules(SYSTEMD REQUIRED libsystemd)
 add_library(LibEventMonitor 
 Device.cpp 
 DeviceEnumerator.cpp
+DeviceMonitor.cpp
+Event.cpp
 TestMonitor.cpp
 )
 

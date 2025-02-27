@@ -9,13 +9,7 @@ void DisplayTestName (const std::string& testName) {
 
 int main() {
     DisplayTestName("TestCreateDeviceFromStaticSyspath");
-    TestCreateDeviceFromStaticSyspath();
-
-    DisplayTestName("TestCreateDeviceFromStaticSyspath");
     TestCreateDevicesFromSyspaths();
-
-    DisplayTestName("TestEnumeratorAndDeviceRef");
-    TestEnumeratorAndDeviceRef();
     
     return 0;
 }

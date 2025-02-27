@@ -14,6 +14,7 @@ if (ENABLE_TESTS)
         Utilities.cpp
         Device.test.cpp
         DeviceEnumerator.test.cpp
+        DeviceMonitor.test.cpp
     )
 
     # Compiler options

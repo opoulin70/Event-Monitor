@@ -1,5 +1,5 @@
+#include <gtest/gtest.h>
 #include <EventMonitor/DeviceEnumerator.h>
-#include "gtest/gtest.h"
 
 class DeviceEnumeratorTests : public ::testing::Test {
 protected:
