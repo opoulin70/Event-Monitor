@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 #include <EventMonitor/DeviceEnumerator.h>
 
-class DeviceEnumeratorTests : public ::testing::Test {
+class DeviceEnumeratorTest : public ::testing::Test {
 protected:
-    DeviceEnumeratorTests() : sdEnumerator(nullptr, &sd_device_enumerator_unref) {}
+    DeviceEnumeratorTest() : sdEnumerator(nullptr, &sd_device_enumerator_unref) {}
 
     void SetUp() override {
         // Create a clean sd_device_enumerator between each tests.
         sd_device_enumerator* enumeratorTemp = nullptr;
         ASSERT_TRUE(sd_device_enumerator_new(&enumeratorTemp) >= 0 && enumeratorTemp) 
-        << "Failed to create a sd_device_enumerator in DeviceEnumeratorTests SetUp!";
+        << "Failed to create a sd_device_enumerator in DeviceEnumeratorTest SetUp!";
         sdEnumerator.reset(enumeratorTemp);
     }
 
@@ -21,7 +21,7 @@ protected:
 };
 
 // TODO : Make generalist test function for getters.
-TEST_F(DeviceEnumeratorTests, GetFirstDeviceAndTestAllGetters) {
+TEST_F(DeviceEnumeratorTest, GetFirstDeviceAndTestAllGetters) {
     // Create our DeviceEnumerator
     const DeviceEnumerator enumerator = DeviceEnumerator();
 
@@ -166,7 +166,7 @@ TEST_F(DeviceEnumeratorTests, GetFirstDeviceAndTestAllGetters) {
     }
 }
 
-TEST_F(DeviceEnumeratorTests, GetAllDevices) {
+TEST_F(DeviceEnumeratorTest, GetAllDevices) {
         const DeviceEnumerator enumerator = DeviceEnumerator();
 
         // Get all devices from our own API.
@@ -183,7 +183,7 @@ TEST_F(DeviceEnumeratorTests, GetAllDevices) {
         EXPECT_EQ(devices.size(), sdDevices.size()) << "Mismatch between DeviceEnumerator and systemd API device counts.";
 }
 
-TEST_F(DeviceEnumeratorTests, GetAllDevices_WithSubsystemFilter) {
+TEST_F(DeviceEnumeratorTest, GetAllDevices_WithSubsystemFilter) {
     DeviceEnumerator enumerator = DeviceEnumerator();
 
     // Add subsystem filter to our enumerator and get all devices.
@@ -204,7 +204,7 @@ TEST_F(DeviceEnumeratorTests, GetAllDevices_WithSubsystemFilter) {
     EXPECT_EQ(devices.size(), sdDevices.size()) << "Mismatch between DeviceEnumerator and systemd API device counts.";
 }
 
-TEST_F(DeviceEnumeratorTests, AddSubsystemFilterAndRemove) {
+TEST_F(DeviceEnumeratorTest, AddSubsystemFilterAndRemove) {
     DeviceEnumerator enumerator = DeviceEnumerator();
 
     // Add usb filter and get count.

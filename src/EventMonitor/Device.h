@@ -97,4 +97,5 @@ private:
     mutable std::optional<std::string> vendorID;
 
     friend class DeviceEnumerator;
+    friend class DeviceMonitor;
 };

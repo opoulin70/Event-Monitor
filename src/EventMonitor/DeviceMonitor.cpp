@@ -13,16 +13,29 @@ DeviceMonitor::DeviceMonitor()
     deviceMonitor.reset(monitorTemp);
 }
 
-DeviceMonitor::DeviceMonitor(const Event& event)
-    : DeviceMonitor() {
-    // Attach the event loop to the device monitor.
-    eventLoop = std::make_shared<Event>(event);
-    AttachToEventInternal();
+DeviceMonitor::DeviceMonitor(std::shared_ptr<Event> event)
+    : DeviceMonitor() { 
+    AttachToEvent(std::move(event));
 }
 
-void DeviceMonitor::AttachToEvent(const Event& event) {
-    eventLoop = std::make_shared<Event>(event);
-    AttachToEventInternal();
+void DeviceMonitor::SetCallback(const DeviceEventCallback callback) {
+    if (!callback) {
+        throw std::invalid_argument("Failed to set callback : Callback cannot be null!");
+    }
+    userCallback = std::move(callback);
+}
+
+void DeviceMonitor::AttachToEvent(std::shared_ptr<Event> event) {
+    // Check if the event is valid.
+    if (!event) {
+        throw std::runtime_error("Failed to attach DeviceMonitor to event loop : Event ptr is null!");
+    }
+    eventLoop = event;
+
+    // Attach the device monitor to the event loop.
+    if (sd_device_monitor_attach_event(deviceMonitor.get(), eventLoop.get()->GetEvent()) < 0) {
+        throw std::runtime_error("Failed to attach DeviceMonitor to event loop : sd_device_monitor_attach_event failed!");
+    }
 }
 
 void DeviceMonitor::DetachFromEvent() {
@@ -32,27 +45,36 @@ void DeviceMonitor::DetachFromEvent() {
 }
 
 void DeviceMonitor::StartMonitoring() {
-    // Check if the event loop is set.
+    // Check if the event loop and callback are set.
     if (!eventLoop) {
         throw std::runtime_error("Failed to start monitoring : Event ptr is null!");
+    }
+    if (!userCallback) {
+        throw std::runtime_error("Failed to start monitoring : Callback is not set!");
+    }
+
+    // Set the callback.
+    const int result = sd_device_monitor_start(
+        deviceMonitor.get(), 
+        [](sd_device_monitor* monitor, sd_device* device, void* userdata) -> int {
+            (void) monitor; // Unused.
+
+            auto* self = static_cast<DeviceMonitor*>(userdata);
+            if (!self) {
+                return -1;
+            }
+            self->userCallback(Device(device));
+            return 0;
+        },
+        this
+    ); 
+    
+    if (result < 0){
+        throw std::runtime_error("Failed to start monitoring : sd_device_monitor_start failed!");
     }
 
     // Start monitoring for device events.
     if (sd_device_monitor_start(deviceMonitor.get(), nullptr, nullptr) < 0) {
         throw std::runtime_error("Failed to start monitoring : sd_device_monitor_start failed!");
-    }
-}
-
-// *** Private ***
-
-void DeviceMonitor::AttachToEventInternal() {
-    // Check if the event loop is set.
-    if (!eventLoop) {
-        throw std::runtime_error("Failed to attach DeviceMonitor to event loop : Event ptr is null!");
-    }
-
-    // Attach the device monitor to the event loop.
-    if (sd_device_monitor_attach_event(deviceMonitor.get(), eventLoop.get()->GetEvent()) < 0) {
-        throw std::runtime_error("Failed to attach DeviceMonitor to event loop : sd_device_monitor_attach_event failed!");
     }
 }
