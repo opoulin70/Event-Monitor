@@ -26,6 +26,7 @@ public:
     void AttachToEvent(std::shared_ptr<Event> eventLoop);
     // Detach the device monitor from the event loop.
     void DetachFromEvent();
+    // TODO : GetEvent()
 
     // Start monitoring for device events.
     void StartMonitoring();
@@ -35,4 +36,8 @@ private:
     std::shared_ptr<Event> eventLoop;
 
     DeviceEventCallback userCallback;
+
+#ifdef ENABLE_TESTS
+    friend class DeviceMonitorTest;
+#endif // ENABLE_TESTS
 };

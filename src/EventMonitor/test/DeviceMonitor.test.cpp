@@ -1,7 +1,23 @@
 #include <gtest/gtest.h>
 #include <EventMonitor/DeviceMonitor.h>
 
-TEST(DeviceMonitorTest, MultipleDeviceMonitorToOneEvent) {
+class DeviceMonitorTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // ...
+    }
+
+    void TearDown() override {
+        // ...
+    }
+
+    // TODO : Maybe we should make a friend getter function inside DeviceMonitor instead.
+    const std::shared_ptr<Event>& GetEventLoop(const DeviceMonitor& monitor) const {
+        return monitor.eventLoop;
+    }
+};
+
+TEST_F(DeviceMonitorTest, MultipleDeviceMonitorToOneEvent) {
     auto event = std::make_shared<Event>();
 
     DeviceMonitor monitor1 = DeviceMonitor(event);
@@ -10,42 +26,43 @@ TEST(DeviceMonitorTest, MultipleDeviceMonitorToOneEvent) {
     // TODO
 }
 
-// TEST(DeviceMonitorTest, EventLoopReferenceCount) {
-//     // Step 1: Create a shared_ptr<Event> and check initial use_count
-//     std::shared_ptr<Event> event = std::make_shared<Event>();
-//     EXPECT_EQ(event.use_count(), 1) << "Initial reference count should be 1.";
+TEST_F(DeviceMonitorTest, SharedOwnershipBetweenDeviceMonitorsOfEvent_CheckEventReferenceCount) {
+    // Step 1: Create a shared_ptr<Event> and check initial use_count.
+    std::shared_ptr<Event> event = std::make_shared<Event>();
+    EXPECT_EQ(event.use_count(), 1);
 
-//     // Step 2: Create first DeviceMonitor (ownership should be moved)
-//     DeviceMonitor monitor1(std::move(event));
-//     EXPECT_EQ(monitor1.GetEventLoop().use_count(), 1) << "After moving, reference count should remain 1.";
+    // Step 2: Create first DeviceMonitor from Event instance.
+    DeviceMonitor monitor1(event);
+    EXPECT_EQ(GetEventLoop(monitor1).use_count(), 2) << "After creating monitor1 from existing event, reference count should now be 2.";
 
-//     // Step 3: Create second DeviceMonitor from the same shared_ptr
-//     std::shared_ptr<Event> sharedEvent = monitor1.GetEventLoop();
-//     DeviceMonitor monitor2(sharedEvent);
-//     EXPECT_EQ(sharedEvent.use_count(), 2) << "Two DeviceMonitors should share ownership, count = 2.";
+    // Step 3: Create second DeviceMonitor and attach it to the same event.
+    DeviceMonitor monitor2 = DeviceMonitor();
+    monitor2.AttachToEvent(event);
+    EXPECT_EQ(GetEventLoop(monitor2).use_count(), 3) << "Two DeviceMonitors and the original Event instance should share ownership.";
 
-//     // Step 4: Destroy monitor2 and check reference count
-//     {
-//         DeviceMonitor monitor3(sharedEvent);
-//         EXPECT_EQ(sharedEvent.use_count(), 3) << "Three DeviceMonitors should share ownership, count = 3.";
-//     }
-//     EXPECT_EQ(sharedEvent.use_count(), 2) << "After monitor3 destruction, count should be 2.";
+    // Step 4: Create monitor3 and check count, then destroy and check again.
+    {
+        DeviceMonitor monitor3(event);
+        EXPECT_EQ(event.use_count(), 4) << "Three DeviceMonitors and the original Event instance should share ownership.";
+    }
+    EXPECT_EQ(event.use_count(), 3) << "After monitor3 destruction, count should be 3 (Two DeviceMonitors and original Event instance).";
 
-//     // Step 5: Destroy monitor1 and check final reference count
-//     {
-//         std::shared_ptr<Event> tmpEvent = monitor1.GetEventLoop();
-//     }  // tmpEvent goes out of scope here
-//     EXPECT_EQ(sharedEvent.use_count(), 1) << "After monitor1 destruction, count should be 1.";
+    // Step 5: Detach monitor2 from event and check count.
+    monitor2.DetachFromEvent();
+    EXPECT_EQ(GetEventLoop(monitor2), nullptr);
+    EXPECT_EQ(event.use_count(), 2) << "After detaching monitor2 from event, count should be 2 (monitor1 and Event instance).";
 
-//     // Step 6: Destroy monitor2, ensuring all references are gone
-//     {
-//         std::shared_ptr<Event> tmpEvent = monitor2.GetEventLoop();
-//     }
-//     EXPECT_EQ(sharedEvent.use_count(), 1) << "After monitor2 destruction, last owner should remain.";
+    // Step 6: Detach monitor1 from event two times, second time should work but do nothing.
+    monitor1.DetachFromEvent();
+    EXPECT_EQ(GetEventLoop(monitor1), nullptr);
+    EXPECT_EQ(event.use_count(), 1) << "After detaching monitor1 from event, count should be 1 (only original Event instance left).";
+    monitor1.DetachFromEvent();
+    EXPECT_EQ(GetEventLoop(monitor1), nullptr);
+    EXPECT_EQ(event.use_count(), 1) << "Detaching monitor1 a second time shouldn't do anything.";
 
-//     // Step 7: Finally destroy the last reference
-//     sharedEvent.reset();
-//     EXPECT_EQ(sharedEvent.use_count(), 0) << "After resetting the last reference, count should be 0.";
-// }
+    // Step 7: Finally destroy the last reference
+    event.reset();
+    EXPECT_EQ(event.use_count(), 0) << "After resetting the last reference, count should be 0.";
+}
 
 // TODO : Should not be able to start event loop without having attached it to a device monitor.

@@ -39,8 +39,12 @@ void DeviceMonitor::AttachToEvent(std::shared_ptr<Event> event) {
 }
 
 void DeviceMonitor::DetachFromEvent() {
-    if (sd_device_monitor_detach_event(deviceMonitor.get()) < 0) {
-        throw std::runtime_error("Failed to detach DeviceMonitor from event loop : sd_device_monitor_detach_event failed!");
+    // TODO : Write warning in else when calling this on !eventLoop ?
+    if (eventLoop) {
+        if (sd_device_monitor_detach_event(deviceMonitor.get()) < 0) {
+            throw std::runtime_error("Failed to detach DeviceMonitor from event loop : sd_device_monitor_detach_event failed!");
+        }
+        eventLoop.reset();
     }
 }
 

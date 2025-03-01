@@ -23,9 +23,6 @@ target_include_directories(LibEventMonitor PRIVATE ${SYSTEMD_INCLUDE_DIRS})
 # Link systemd library
 target_link_libraries(LibEventMonitor PRIVATE ${SYSTEMD_LDFLAGS})
 
-# TODO : REMOVE
-# message(STATUS "BUILD_MAIN_EXECUTABLE is ${BUILD_MAIN_EXECUTABLE}")
-
 # Add source files for main application
 if (BUILD_MAIN_EXECUTABLE)
     add_executable(EventMonitor 
@@ -37,9 +34,7 @@ if (BUILD_MAIN_EXECUTABLE)
     target_compile_options(EventMonitor PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# TODO : REMOVE
-# message(STATUS "ENABLE_TESTS is ${ENABLE_TESTS}")
-
 if (ENABLE_TESTS)
     add_subdirectory(test)
+    target_compile_definitions(LibEventMonitor PRIVATE ENABLE_TESTS=1)  # Define ENABLE_TESTS macro
 endif()
