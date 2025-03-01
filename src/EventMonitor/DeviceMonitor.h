@@ -20,13 +20,14 @@ public:
     DeviceMonitor& operator=(const DeviceMonitor&) = delete;
     DeviceMonitor& operator=(DeviceMonitor&&) noexcept = default;
 
+    const std::shared_ptr<Event>& GetEvent() const { return eventLoop; }
+
     void SetCallback(const DeviceEventCallback callback);
 
     // Attach the device monitor to the event loop.
     void AttachToEvent(std::shared_ptr<Event> eventLoop);
     // Detach the device monitor from the event loop.
     void DetachFromEvent();
-    // TODO : GetEvent()
 
     // Start monitoring for device events.
     void StartMonitoring();
