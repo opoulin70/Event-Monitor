@@ -26,7 +26,6 @@ public:
     static Device CreateFromIfname(const std::string& ifname);
     static Device CreateFromIfindex(int ifindex);
     
-    // TODO : GetAction()
     const std::optional<std::string>& GetDevname(const bool refreshCache = false) const;
     // TODO : GetDevnum()
     const std::optional<std::string>& GetDevpath(const bool refreshCache = false) const;
@@ -46,7 +45,8 @@ public:
     const std::optional<std::string>& GetType(const bool refreshCache = false) const;
     const std::optional<std::string>& GetVendorID(const bool refreshCache = false) const;
 
-    // TODO : Document this is not in cache
+    // TODO : Document these are not in cache
+    const std::optional<sd_device_action_t> GetAction() const; // TODO : Change this to use our own custom enum or something else ?
     const std::optional<std::string> GetPropertyFromKey(std::string key) const;
 
     // TODO: Use boolean to indicate if cache is stale ?

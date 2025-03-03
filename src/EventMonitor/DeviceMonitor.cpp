@@ -49,6 +49,11 @@ void DeviceMonitor::DetachFromEvent() {
 }
 
 void DeviceMonitor::StartMonitoring() {
+    if (isMonitoring) {
+        // TODO : log warning ?
+        return;
+    }
+
     // Check if the event loop and callback are set.
     if (!eventLoop) {
         throw std::runtime_error("Failed to start monitoring : Event ptr is null!");
@@ -67,7 +72,7 @@ void DeviceMonitor::StartMonitoring() {
             if (!self) {
                 return -1;
             }
-            self->userCallback(Device(device));
+            self->userCallback(*self, Device(device));
             return 0;
         },
         this
@@ -81,4 +86,20 @@ void DeviceMonitor::StartMonitoring() {
     if (sd_device_monitor_start(deviceMonitor.get(), nullptr, nullptr) < 0) {
         throw std::runtime_error("Failed to start monitoring : sd_device_monitor_start failed!");
     }
+
+    isMonitoring = true;
+}
+
+void DeviceMonitor::StopMonitoring() {
+    if (!isMonitoring) {
+        // TODO : log warning ?
+        return;
+    }
+
+    // Stop monitoring for device events.
+    if (sd_device_monitor_stop(deviceMonitor.get()) < 0) {
+        throw std::runtime_error("Failed to stop monitoring : sd_device_monitor_stop failed!");
+    }
+
+    isMonitoring = false;
 }

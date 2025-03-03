@@ -49,11 +49,14 @@ TEST_F(DeviceMonitorTest, SharedOwnershipBetweenDeviceMonitorsOfEvent_CheckEvent
     EXPECT_EQ(event.use_count(), 2) << "After detaching monitor2 from event, count should be 2 (monitor1 and Event instance).";
 
     // Step 6: Detach monitor1 from event two times, second time should work but do nothing.
+    EXPECT_EQ(monitor1.IsAttachedToEvent(), true);
     monitor1.DetachFromEvent();
-    EXPECT_EQ(monitor1.GetEvent(), nullptr);
+    EXPECT_EQ(monitor1.IsAttachedToEvent(), false);
     EXPECT_EQ(event.use_count(), 1) << "After detaching monitor1 from event, count should be 1 (only original Event instance left).";
+
+    EXPECT_EQ(monitor1.IsAttachedToEvent(), false);
     monitor1.DetachFromEvent();
-    EXPECT_EQ(monitor1.GetEvent(), nullptr);
+    EXPECT_EQ(monitor1.IsAttachedToEvent(), false);
     EXPECT_EQ(event.use_count(), 1) << "Detaching monitor1 a second time shouldn't do anything.";
 
     // Step 7: Finally destroy the last reference
