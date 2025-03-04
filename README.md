@@ -16,7 +16,9 @@ The project is in active development and currently supports attaching to an even
 - **Modern C++ Design**:  
   - Utilizes RAII for resource management through smart pointers.  
   - Encapsulates `libsystemd` details behind an easy-to-use API.  
-- **Basic Device Detection**: Detects device interactions and triggers user-defined callback.  
+- **Basic Device Detection**: Detects device interactions and triggers user-defined callback.
+- **Unit Testing with Google Test (gtest)**: Ensures reliability with automated unit tests.
+
 
 ---
 
