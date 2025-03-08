@@ -1,9 +1,10 @@
-#include <EventMonitor/DeviceEnumerator.h>
-#include <EventMonitor/Device.h>
 #include <systemd/sd-device.h>
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include <EventMonitor/DeviceEnumerator.h>
+#include <EventMonitor/Device.h>
+#include <EventMonitor/DeviceMonitor.h>
 
 // Helper function: Enumerate device syspaths (optionally filtered by subsystem)
 std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = nullptr) {
@@ -38,7 +39,7 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
             std::cerr << "Failed to get syspath: " << strerror(-r) << std::endl;
         }
         
-        //sd_device_unref(dev);
+        //sd_device_unref(dev); // This causes crash.
     }
     
     sd_device_enumerator_unref(enumerator);
@@ -46,8 +47,22 @@ std::vector<std::string> EnumerateDeviceSyspaths(const char* subsystemFilter = n
     return paths;
 }
 
-void TestCreateDeviceFromStaticSyspath() {
-    Device dev = Device::CreateFromSyspath("/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1");
+std::string DeviceActionToString(sd_device_action_t action) {
+    switch (action) {
+        case SD_DEVICE_ADD: return "Add";
+        case SD_DEVICE_REMOVE: return "Remove";
+        case SD_DEVICE_CHANGE: return "Change";
+        case SD_DEVICE_MOVE: return "Move";
+        case SD_DEVICE_ONLINE: return "Online";
+        case SD_DEVICE_OFFLINE: return "Offline";
+        case SD_DEVICE_BIND: return "Bind";
+        case SD_DEVICE_UNBIND: return "Unbind";
+        default: return "Unknown";
+    }
+}
+
+void TestCreateDeviceFromStaticSyspath(const std::string& syspath = "/sys/devices/pci0000:00/0000:00:0c.0/usb1/1-1") {
+    Device dev = Device::CreateFromSyspath(syspath);
     auto type = dev.GetType();
     auto name = dev.GetName();
     auto path = dev.GetPath();
@@ -128,82 +143,116 @@ void TestEnumeratorAndDeviceRef() {
     }
 }
 
-// void TestCreateDevicesFromSyspaths() {
-//     Device dev;  // Assume this initializes your `sd_device`
+int TestListenToDevicesPlugUnplug() {
+    try {
+        // Create the event loop
+        auto eventLoop = std::make_shared<Event>();
 
-//     std::cout << "Testing Device Getters...\n";
+        // Create the device monitor and attach it to the event loop
+        DeviceMonitor monitor(eventLoop);
 
-//     auto type = dev.GetType();
-//     auto name = dev.GetName();
-//     auto path = dev.GetPath();
-//     auto productID = dev.GetProductID();
-//     auto serial = dev.GetSerial();
-//     auto subsystem = dev.GetSubsystem();
-//     auto vendorID = dev.GetVendorID();
+        // Set a callback to handle USB device events
+        monitor.SetCallback([](const DeviceMonitor& monitorRef, Device device) {
+            (void) monitorRef; // Unused.
+            const auto& action = device.GetAction(); // Assuming `GetAction()` returns "add", "remove", etc.
+            const auto& name = device.GetName();     // Assuming `GetName()` provides the device name
 
-//     std::cout << "Device Type: " << (type ? *type : "N/A") << "\n";
-//     std::cout << "Device Name: " << (name ? *name : "N/A") << "\n";
-//     std::cout << "Device Path: " << (path ? *path : "N/A") << "\n";
-//     std::cout << "Product ID: " << (productID ? *productID : "N/A") << "\n";
-//     std::cout << "Serial: " << (serial ? *serial : "N/A") << "\n";
-//     std::cout << "Subsystem: " << (subsystem ? *subsystem : "N/A") << "\n";
-//     std::cout << "Vendor ID: " << (vendorID ? *vendorID : "N/A") << "\n";
+            std::cout << "Callback called!" << std::endl;
 
-//     std::cout << "Now testing cache behavior...\n";
+            if (!action.has_value()) {
+                return;
+            }
+            
+            if (action.value() == sd_device_action_t::SD_DEVICE_ADD) {
+                std::cout << "USB Device Connected: " << name.value_or("ERROR : Can't find name.") << std::endl;
+            } else if (action.value() == sd_device_action_t::SD_DEVICE_REMOVE) {
+                std::cout << "USB Device Disconnected: " << name.value_or("ERROR : Can't find name.") << std::endl;
+            } else {
+                std::cout << "Unknown event (" << DeviceActionToString(action.value()) << ") for device: " << name.value_or("ERROR : Can't find name.") << std::endl;
+            }
+        });
 
-//     // Call again to check if caching works
-//     auto type2 = dev.GetType();
-//     std::cout << "Re-fetched Type (should be cached): " << (type2 ? *type2 : "N/A") << "\n";
+        // Start monitoring for USB events
+        monitor.StartMonitoring();
+        std::cout << "Monitoring USB devices... Press Ctrl+C to stop." << std::endl;
 
-//     // Ensure it's returning the same object (cache check)
-//     if (type == type2) {
-//         std::cout << "Cache is working correctly!\n";
-//     } else {
-//         std::cout << "Cache is NOT working correctly!\n";
-//     }
+        // Run the event loop indefinitely
+        sd_event_loop(eventLoop->GetEvent());
 
-//     return;
-// }
+    } 
+    catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
-// void MonitorDevicesOld() {
-//     struct udev *udev = udev_new();
-//     if (!udev) {
-//         std::cerr << "Failed to create udev object.\n";
-//         return;
-//     }
+    return EXIT_SUCCESS;
+}
 
-//     // Create a device enumerator
-//     struct udev_enumerate *enumerate = udev_enumerate_new(udev);
-//     udev_enumerate_add_match_subsystem(enumerate, "usb");  // Only list USB devices
-//     udev_enumerate_scan_devices(enumerate);
+int TestListenToDevicesPlugUnplug_sdDevice() {
+    try {
+        // Create a simple device monitor
+        sd_device_monitor* monitor = nullptr;
+        if (sd_device_monitor_new(&monitor) < 0 || !monitor) {
+            throw std::runtime_error("Failed to create a DeviceMonitor instance!");
+        }
 
-//     struct udev_list_entry *devices, *dev_list_entry;
-//     devices = udev_enumerate_get_list_entry(enumerate);
+        // Attach the monitor to the event loop
+        sd_event* eventLoop = nullptr;
+        if (sd_event_default(&eventLoop) < 0 || !eventLoop) {
+            throw std::runtime_error("Failed to create an event loop!");
+        }
 
-//     std::cout << "Connected USB devices:\n";
+        sd_device_monitor_attach_event(monitor, eventLoop);
 
-//     // Loop through the devices
-//     udev_list_entry_foreach(dev_list_entry, devices) {
-//         const char *path = udev_list_entry_get_name(dev_list_entry);
-//         struct udev_device *dev = udev_device_new_from_syspath(udev, path);
+        // Start monitoring for device events
+        int result = sd_device_monitor_start(
+            monitor, 
+            [](sd_device_monitor* monitor, sd_device* device, void* userdata) -> int {
+                (void) monitor; // Unused.
+                (void) userdata; // Unused.
+                
+                std::cout << "Callback called!" << std::endl;
 
-//         if (dev) {
-//             std::cout << "------------------------------------\n";
-//             std::cout << "Device Path: " << path << "\n";
-//             std::cout << "Subsystem: " << (udev_device_get_subsystem(dev) ? udev_device_get_subsystem(dev) : "Unknown") << "\n";
-//             std::cout << "Devtype: " << (udev_device_get_devtype(dev) ? udev_device_get_devtype(dev) : "Unknown") << "\n";
-//             std::cout << "Vendor ID: " << (udev_device_get_property_value(dev, "ID_VENDOR_ID") ? udev_device_get_property_value(dev, "ID_VENDOR_ID") : "Unknown") << "\n";
-//             std::cout << "Product ID: " << (udev_device_get_property_value(dev, "ID_MODEL_ID") ? udev_device_get_property_value(dev, "ID_MODEL_ID") : "Unknown") << "\n";
-//             std::cout << "Device Name: " << (udev_device_get_property_value(dev, "ID_MODEL") ? udev_device_get_property_value(dev, "ID_MODEL") : "Unknown") << "\n";
-//             std::cout << "Device Serial: " << (udev_device_get_property_value(dev, "ID_SERIAL") ? udev_device_get_property_value(dev, "ID_SERIAL") : "Unknown") << "\n";
+                if (!device) {
+                    std::cout << "Invalid device!" << std::endl;
+                    return -1;
+                }
 
-//             udev_device_unref(dev);
-//         }
-//     }
+                sd_device_action_t action;
+                if (sd_device_get_action(device, &action) < 0) {
+                    std::cerr << "Failed to get device action!" << std::endl;
+                    return -1;
+                }
+                
+                if (action) {
+                    if (action == sd_device_action_t::SD_DEVICE_ADD) {
+                        std::cout << "Device added!" << std::endl;
+                    } else if (action == sd_device_action_t::SD_DEVICE_REMOVE) {
+                        std::cout << "Device removed!" << std::endl;
+                    }
+                }
 
-//     // Cleanup
-//     udev_enumerate_unref(enumerate);
-//     udev_unref(udev);
+                return 0;
+            },
+            nullptr
+        );
 
-//     return;
-// }
+        if (result < 0) {
+            throw std::runtime_error("Failed to start monitoring: sd_device_monitor_start failed!");
+        }
+
+        std::cout << "Monitoring devices..." << std::endl;
+
+        sd_event_loop(eventLoop);
+
+        // Clean up
+        sd_device_monitor_unref(monitor);
+        sd_event_unref(eventLoop);
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
